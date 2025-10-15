@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search - Business Class Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .search-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .search-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .best-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .option-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            background: #f9fafb;
+        }
+
+        .option-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .option-card .price {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .option-card .details {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .recommendation {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .recommendation strong {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #92400e;
+        }
+
+        .flights-list h3 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .flight-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.3s, transform 0.2s;
+        }
+
+        .flight-item:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .flight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .airline {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .price-tag {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .flight-details {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .badge-business {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-award {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        @media (max-width: 768px) {
+            .form-row, .best-options {
+                grid-template-columns: 1fr;
+            }
+
+            .flight-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✈️ Business Class Flight Finder</h1>
+            <p>Find the best business class flights and award availability</p>
+        </div>
+
+        <div class="search-card">
+            <form id="searchForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="origin">From (Airport Code)</label>
+                        <input type="text" id="origin" placeholder="e.g., JFK" required maxlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">To (Airport Code)</label>
+                        <input type="text" id="destination" placeholder="e.g., HND" required maxlength="3">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="outbound">Departure Date</label>
+                        <input type="date" id="outbound" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="return">Return Date</label>
+                        <input type="date" id="return" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="search-btn" id="searchBtn">
+                    🔍 Search Flights
+                </button>
+            </form>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Searching for the best flights...</p>
+        </div>
+
+        <div id="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('searchForm');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const searchBtn = document.getElementById('searchBtn');
+
+        // Set default dates (2 months from now)
+        const today = new Date();
+        const twoMonths = new Date(today.getTime() + (60 * 24 * 60 * 60 * 1000));
+        const tenDays = new Date(twoMonths.getTime() + (10 * 24 * 60 * 60 * 1000));
+
+        document.getElementById('outbound').valueAsDate = twoMonths;
+        document.getElementById('return').valueAsDate = tenDays;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const origin = document.getElementById('origin').value.toUpperCase();
+            const destination = document.getElementById('destination').value.toUpperCase();
+            const outbound = document.getElementById('outbound').value;
+            const returnDate = document.getElementById('return').value;
+
+            // Show loading
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            searchBtn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:8000/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        origin: origin,
+                        destination: destination,
+                        outbound_date: outbound,
+                        return_date: returnDate
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data.analysis);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Failed to search flights: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+                searchBtn.disabled = false;
+            }
+        });
+
+        function displayResults(analysis) {
+            const cashFlights = analysis.all_options.filter(f => f.flight_type === 'business' || f.flight_type === 'cash');
+            const awardFlights = analysis.all_options.filter(f => f.flight_type === 'award');
+
+            results.innerHTML = `
+                <div class="results-card">
+                    <div class="summary">
+                        <h2>🎯 Search Results</h2>
+                        <p>${analysis.summary}</p>
+                    </div>
+
+                    ${analysis.recommendations && analysis.recommendations.length > 0 ? `
+                        <div class="recommendation">
+                            <strong>${analysis.recommendations[0].message}</strong>
+                            <p>${analysis.recommendations[0].details}</p>
+                        </div>
+                    ` : ''}
+
+                    <div class="best-options">
+                        ${analysis.best_cash_option ? `
+                            <div class="option-card">
+                                <h3>💵 Best Cash Option</h3>
+                                <div class="price">$${analysis.best_cash_option.price.toLocaleString()}</div>
+                                <div class="details">
+                                    <strong>${analysis.best_cash_option.airline}</strong><br>
+                                    ${analysis.best_cash_option.departure_time} → ${analysis.best_cash_option.arrival_time}<br>
+                                    Duration: ${Math.floor(analysis.best_cash_option.duration / 60)}h ${analysis.best_cash_option.duration % 60}m<br>
+                                    Stops: ${analysis.best_cash_option.stops}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${analysis.best_award_option ? `
+                            <div class="option-card">
+                                <h3>🎁 Best Award Option</h3>
+                                <div class="price">${analysis.best_award_option.miles_cost.toLocaleString()} miles</div>
+                                <div class="details">
+                                    <strong>${analysis.best_award_option.airline}</strong><br>
+                                    + $${analysis.best_award_option.cash_cost} taxes<br>
+                                    ${analysis.best_award_option.cabin} class<br>
+                                    Availability: ${analysis.best_award_option.availability}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="flights-list">
+                        <h3>All Business Class Flights (${cashFlights.length})</h3>
+                        ${cashFlights.map(flight => `
+                            <div class="flight-item">
+                                <div class="flight-header">
+                                    <div class="airline">${flight.airline}</div>
+                                    <div class="price-tag">$${flight.price.toLocaleString()}</div>
+                                </div>
+                                <div class="flight-details">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Departure</div>
+                                        <div class="detail-value">${flight.departure_time.split(' ')[1] || flight.departure_time}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Arrival</div>
+                                        <div class="detail-value">${flight.arrival_time.split(' ')[1] || flight.arrival_time}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Duration</div>
+                                        <div class="detail-value">${Math.floor(flight.duration / 60)}h ${flight.duration % 60}m</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Stops</div>
+                                        <div class="detail-value">${flight.stops}</div>
+                                    </div>
+                                </div>
+                                <span class="badge badge-business">Business Class</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            results.style.display = 'block';
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

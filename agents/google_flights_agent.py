@@ -36,7 +36,9 @@ class GoogleFlightsAgent(FlightAgent):
                 'currency': 'USD',
                 'hl': 'en',
                 'gl': 'us',
-                'api_key': self.api_key
+                'api_key': self.api_key,
+                'travel_class': '3',
+                'deep_search': 'true'
             }
 
             print(f"📡 Making SerpAPI request...")
@@ -64,40 +66,30 @@ class GoogleFlightsAgent(FlightAgent):
     def _parse_google_results(self, data):
         """Parse Google Flights API response"""
         results = []
+        all_flights = []
 
-        # Try different possible response structures
-        flights_data = []
+        # Collect flights from all available sections
+        for key in ['best_flights', 'other_flights', 'flights']:
+            if key in data and data[key]:
+                all_flights.extend(data[key])
+                print(f"Found {len(data[key])} flights in '{key}'")
 
-        if 'best_flights' in data:
-            flights_data = data['best_flights']
-            print(f"Found {len(flights_data)} best flights")
-        elif 'other_flights' in data:
-            flights_data = data['other_flights']
-            print(f"Found {len(flights_data)} other flights")
-        elif 'flights' in data:
-            flights_data = data['flights']
-            print(f"Found {len(flights_data)} flights")
-        else:
+        if not all_flights:
             print(f"No flights found. Available keys: {list(data.keys())}")
             return []
 
-        for flight in flights_data[:10]:  # Take first 10 results
-            try:
-                # Parse flight data - structure may vary
-                price = 0
-                if 'price' in flight:
-                    price = flight['price']
-                elif 'total_price' in flight:
-                    price = flight['total_price']
+        print(f"📊 Total flights to parse: {len(all_flights)}")
 
-                # Get departure/arrival info
+        for flight in all_flights:  # Parse ALL flights - no limit
+            try:
+                price = flight.get('price', 0)
+
+                # Parse departure/arrival info
                 departure_time = "Unknown"
                 arrival_time = "Unknown"
-
                 if 'flights' in flight and flight['flights']:
                     first_segment = flight['flights'][0]
                     departure_time = first_segment.get('departure_airport', {}).get('time', 'Unknown')
-
                     last_segment = flight['flights'][-1]
                     arrival_time = last_segment.get('arrival_airport', {}).get('time', 'Unknown')
 
@@ -111,7 +103,8 @@ class GoogleFlightsAgent(FlightAgent):
                 result = {
                     "airline": flight.get('airline', 'Multiple Airlines'),
                     "price": price,
-                    "flight_type": "cash",  # Added for analysis agent
+                    "flight_type": "business",
+                    "cabin_class": "Business",
                     "departure_time": departure_time,
                     "arrival_time": arrival_time,
                     "duration": flight.get('total_duration', 'Unknown'),
@@ -120,8 +113,8 @@ class GoogleFlightsAgent(FlightAgent):
                         'booking_options') else '',
                     "raw_data": flight
                 }
-                results.append(result)
 
+                results.append(result)
             except Exception as e:
                 print(f"Error parsing flight: {e}")
                 continue
