@@ -8,7 +8,7 @@ class GoogleFlightsAgent(FlightAgent):
 
     def __init__(self):
         # Get API key from environment variable or replace with your key
-        self.api_key = os.getenv('SERPAPI_KEY', '06dc4ca12dc4a975d2a9e19b1183cc3045b8b51db5b650186b0ef617c28a6360')
+        self.api_key = os.getenv('SERPAPI_KEY')
 
         # Debug: print API key status
         if self.api_key and self.api_key != 'your_serpapi_key_here':
