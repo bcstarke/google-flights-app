@@ -1,4 +1,3 @@
-import requests
 import os
 from .base_agent import FlightAgent
 from serpapi import GoogleSearch
@@ -10,7 +9,6 @@ class GoogleFlightsAgent(FlightAgent):
     def __init__(self):
         # Get API key from environment variable or replace with your key
         self.api_key = os.getenv('SERPAPI_KEY', '06dc4ca12dc4a975d2a9e19b1183cc3045b8b51db5b650186b0ef617c28a6360')
-        self.base_url = "https://serpapi.com/search?engine=google_flights"
 
         # Debug: print API key status
         if self.api_key and self.api_key != 'your_serpapi_key_here':
@@ -28,45 +26,39 @@ class GoogleFlightsAgent(FlightAgent):
 
         try:
             print(f"🔍 Searching Google Flights: {search_request['departure_id']} → {search_request['arrival_id']}")
-            print(f"🔑 Using API key: {self.api_key[:10]}...")
 
             params = {
                 'engine': 'google_flights',
                 'departure_id': search_request['departure_id'],
                 'arrival_id': search_request['arrival_id'],
                 'outbound_date': search_request['outbound_date'],
-                'return_date': search_request['return_date'],
+                'return_date': search_request.get('return_date'),  # Optional
                 'currency': 'USD',
                 'hl': 'en',
                 'gl': 'us',
                 'api_key': self.api_key
             }
 
-            print(f"📡 Making API request to: {self.base_url}")
-            response = GoogleSearch(params)
-            print(f"📊 SerpAPI response status: {response.get_json()}")
+            print(f"📡 Making SerpAPI request...")
+            search = GoogleSearch(params)
+            data = search.get_dict()  # Changed from get_json()
 
-            if response.status_code == 200:
-                data = response.json()
+            print(f"📊 SerpAPI response received")
+            print(f"📋 Response keys: {list(data.keys())}")
 
-                # Debug: print response structure
-                print(f"📋 Response keys: {list(data.keys())}")
-
-                # Check for API errors
-                if 'error' in data:
-                    print(f"❌ SerpAPI error: {data['error']}")
-                    return self._get_mock_data(search_request)
-
-                results = self._parse_google_results(data)
-                print(f"✅ Parsed {len(results)} real flights")
-                return results
-            else:
-                print(f"❌ SerpAPI HTTP error: {response.status_code}")
-                print(f"Response: {response.text[:200]}")
+            # Check for API errors
+            if 'error' in data:
+                print(f"❌ SerpAPI error: {data['error']}")
                 return self._get_mock_data(search_request)
+
+            results = self._parse_google_results(data)
+            print(f"✅ Parsed {len(results)} real flights")
+            return results
 
         except Exception as e:
             print(f"❌ Google Flights agent error: {e}")
+            import traceback
+            traceback.print_exc()
             return self._get_mock_data(search_request)
 
     def _parse_google_results(self, data):
@@ -119,11 +111,13 @@ class GoogleFlightsAgent(FlightAgent):
                 result = {
                     "airline": flight.get('airline', 'Multiple Airlines'),
                     "price": price,
+                    "flight_type": "cash",  # Added for analysis agent
                     "departure_time": departure_time,
                     "arrival_time": arrival_time,
                     "duration": flight.get('total_duration', 'Unknown'),
                     "stops": stops,
-                    "booking_link": flight.get('booking_options', [{}])[0].get('link', ''),
+                    "booking_link": flight.get('booking_options', [{}])[0].get('link', '') if flight.get(
+                        'booking_options') else '',
                     "raw_data": flight
                 }
                 results.append(result)
@@ -140,23 +134,25 @@ class GoogleFlightsAgent(FlightAgent):
             {
                 "airline": "American Airlines",
                 "price": 450,
+                "flight_type": "cash",
                 "departure_time": "08:00 AM",
                 "arrival_time": "11:30 AM",
                 "duration": "5h 30m",
                 "stops": 0,
                 "route": f"{search_request['departure_id']} → {search_request['arrival_id']}",
-                "date": search_request['date'],
+                "outbound_date": search_request['outbound_date'],  # Changed from 'date'
                 "raw_data": {"mock": True}
             },
             {
                 "airline": "Delta",
                 "price": 520,
+                "flight_type": "cash",
                 "departure_time": "02:15 PM",
                 "arrival_time": "06:45 PM",
                 "duration": "6h 30m",
                 "stops": 1,
                 "route": f"{search_request['departure_id']} → {search_request['arrival_id']}",
-                "date": search_request['date'],
+                "outbound_date": search_request['outbound_date'],  # Changed from 'date'
                 "raw_data": {"mock": True}
             }
         ]

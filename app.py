@@ -24,35 +24,21 @@ def home():
 @app.route('/search', methods=['POST'])
 def search():
     try:
-        # Get user input
         data = request.json
-        origin = data.get('origin')
-        destination = data.get('destination')
-        outbound_date = data.get('outbound_date')
-        return_date = data.get('return_date')
-
-        # Basic validation
-        if not all([origin, destination, outbound_date, return_date]):
-            return jsonify({"error": "Missing required fields: origin, destination, date"}), 400
-
-        # Create search request
         search_request = {
-            "departure_id": origin,
-            "arrival_id": destination,
-            "outbound_date": outbound_date,
-            "return_date": return_date
+            "departure_id": data.get('origin'),
+            "arrival_id": data.get('destination'),
+            "outbound_date": data.get('outbound_date'),
+            "return_date": data.get('return_date')
         }
 
-        # Use controller to search
         controller = FlightController()
-        results = controller.search(search_request)
+        analyzed_results = controller.search(search_request)
 
         return jsonify({
             "success": True,
-            "search": search_request,
-            "results": results
+            "analysis": analyzed_results
         })
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
